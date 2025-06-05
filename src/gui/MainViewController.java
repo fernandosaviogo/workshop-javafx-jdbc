@@ -3,6 +3,7 @@ package gui;
 import java.io.IOException;
 import java.net.URL;
 import java.util.ResourceBundle;
+import java.util.function.Consumer;
 
 import application.Main;
 import gui.util.Alerts;
@@ -37,12 +38,15 @@ public class MainViewController implements Initializable {
 
 	@FXML
 	public void onMenuItemDepartmentAction() {
-		loadView2("/gui/DepartmentList.fxml");
+		loadView("/gui/DepartmentList.fxml", (DepartmentListController controller) -> {
+			controller.setDepartmentService(new DepartmentService());
+			controller.updateTableview();
+		});
 	}
 
 	@FXML
 	public void onMenuItemAboutAction() {
-		loadView("/gui/About.fxml");
+		loadView("/gui/About.fxml", x -> {});
 	}
 
 	// Metodo da interface
@@ -50,8 +54,9 @@ public class MainViewController implements Initializable {
 	public void initialize(URL url, ResourceBundle rb) {
 
 	}
-
-	private synchronized void loadView(String absoluteName) {  // synchronized garante que a aplicação não ira parar durante o mult thread.
+	
+	// O Consumer evita ter que fazer uma função loadview para cada ação (recebe a função lambida na chamada da função)
+	private synchronized <T> void loadView(String absoluteName, Consumer<T> initializinAction) {  // synchronized garante que a aplicação não ira parar durante o mult thread.
 		try {
 			FXMLLoader loader = new FXMLLoader(getClass().getResource(absoluteName));
 			VBox newVBox = loader.load();
@@ -64,34 +69,14 @@ public class MainViewController implements Initializable {
 			mainVBox.getChildren().clear();  // Limpa os childrens do mainVBox
 			mainVBox.getChildren().add(mainMenu);
 			mainVBox.getChildren().addAll(newVBox.getChildren());
+			
+			// Ativa a função passada no loadView
+			T controller = loader.getController();
+			initializinAction.accept(controller);
 						
 		} catch (IOException e) {
 			Alerts.showAlert("IO Exception", "Error loading view", e.getMessage(), AlertType.ERROR);
 		}
 	}
 	
-	private synchronized void loadView2(String absoluteName) {  // synchronized garante que a aplicação não ira parar durante o mult thread.
-		try {
-			FXMLLoader loader = new FXMLLoader(getClass().getResource(absoluteName));
-			VBox newVBox = loader.load();
-			
-			// Acessa o VBox dentro do MainView
-			Scene mainScene = Main.getMainScene();  // pega a referencia da cena
-			VBox mainVBox = (VBox)((ScrollPane)mainScene.getRoot()).getContent();
-			
-			Node mainMenu = mainVBox.getChildren().get(0); // pega o primeiro children do mainVBox
-			mainVBox.getChildren().clear();  // Limpa os childrens do mainVBox
-			mainVBox.getChildren().add(mainMenu);
-			mainVBox.getChildren().addAll(newVBox.getChildren());
-			
-			// Atualiza os dados na tela do Tableview
-			DepartmentListController controller = loader.getController();
-			controller.setDepartmentService(new DepartmentService());
-			controller.updateTableview();
-						
-		} catch (IOException e) {
-			Alerts.showAlert("IO Exception", "Error loading view", e.getMessage(), AlertType.ERROR);
-		}
-	}
-
 }
