@@ -1,9 +1,12 @@
 package gui;
 
 import java.net.URL;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.ResourceBundle;
 
 import db.DbException;
+import gui.listeners.DataChangeListener;
 import gui.util.Alerts;
 import gui.util.Constraints;
 import gui.util.Utils;
@@ -24,6 +27,9 @@ public class DepartmentFormController implements Initializable{
 	
 	// instacia da classe DepartmentService
 	private DepartmentService service;
+	
+	// Cria uma lista para receber os objetos com os eventos para DataChangeListener
+	private List<DataChangeListener> dataChangeListeners = new ArrayList<>();
 	
 	@FXML
 	private TextField txtId;
@@ -49,6 +55,11 @@ public class DepartmentFormController implements Initializable{
 		this.service = service;
 	}
 	
+	// Metodo para interface DataChangeListener adicionar na lista de eventos
+	public void subscribeDataChangelistener(DataChangeListener listener) {
+		dataChangeListeners.add(listener);
+	}
+	
 	// Metodos de controles dos items da tela
 	@FXML
 	public void onBtSaveAction(ActionEvent event) {
@@ -62,6 +73,7 @@ public class DepartmentFormController implements Initializable{
 		try {
 			entity = getFormData();  // Pega os dados das caixas de texto da tela
 			service.saveOrUpdate(entity);  // Salva no banco de dados
+			notifyDataChangeListener(); // Metodo para fazer a notificação da modificação de dados
 			Utils.currentStage(event).close();  // Fecha a janela 
 		}
 		catch (DbException e) {
@@ -69,6 +81,12 @@ public class DepartmentFormController implements Initializable{
 		}
 	}
 	
+	private void notifyDataChangeListener() {
+		for (DataChangeListener listener : dataChangeListeners) {
+			listener.onDataChanged();
+		}
+	}
+
 	private Department getFormData() {
 		Department obj = new Department();
 		
