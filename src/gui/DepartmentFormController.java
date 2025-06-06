@@ -3,7 +3,9 @@ package gui;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.ResourceBundle;
+import java.util.Set;
 
 import db.DbException;
 import gui.listeners.DataChangeListener;
@@ -18,6 +20,7 @@ import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
 import model.entities.Department;
+import model.exceptions.ValidationException;
 import model.services.DepartmentService;
 
 public class DepartmentFormController implements Initializable{
@@ -76,6 +79,9 @@ public class DepartmentFormController implements Initializable{
 			notifyDataChangeListener(); // Metodo para fazer a notificação da modificação de dados
 			Utils.currentStage(event).close();  // Fecha a janela 
 		}
+		catch (ValidationException e) {  // Trata o erro de preechimento do campo name
+			setErrorMessages(e.getErros());
+		}
 		catch (DbException e) {
 			Alerts.showAlert("Error saving object", null, e.getMessage(), AlertType.ERROR);
 		}
@@ -86,12 +92,24 @@ public class DepartmentFormController implements Initializable{
 			listener.onDataChanged();
 		}
 	}
-
+	
+	// Metodo GET
 	private Department getFormData() {
 		Department obj = new Department();
 		
+		ValidationException exception = new ValidationException("Validation error");
+		
 		obj.setId(Utils.tryParseToInt(txtId.getText()));  // Busca o Id e verifica na classe Utils se e inserção ou update
+		
+		if (txtName.getText() == null || txtName.getText().trim().equals("")) {  // verifica se o campo nome esta vaizio se estiver lança a msg
+			exception.addError("name", "Field can´t be empty");
+		}
+		
 		obj.setName(txtName.getText());
+		
+		if (exception.getErros().size() > 0) {   // Testa se exite um erro e lança a exceção
+			throw exception;
+		}
 		
 		return obj;
 	}
@@ -117,6 +135,15 @@ public class DepartmentFormController implements Initializable{
 		}
 		txtId.setText(String.valueOf(entity.getId()));
 		txtName.setText(entity.getName());
+	}
+	
+	// função SET para preenchimento dos errors na caixa de texto na tela
+	private void setErrorMessages(Map<String, String> errors) {
+		Set<String> fields = errors.keySet();
+		
+		if (fields.contains("name")) {
+			labelErrorName.setText(errors.get("name"));
+		}
 	}
 
 }
