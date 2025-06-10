@@ -29,6 +29,15 @@ public class Utils {
 			return null;
 		}
 	}
+	
+	// Metodo que trasforma o texto da caixa Id em double
+		public static Double tryParseToDouble(String str) {
+			try {
+				return Double.parseDouble(str);
+			} catch (NumberFormatException e) {
+				return null;
+			}
+		}
 
 	// Metodo para configurar a data na tabela (Seller)
 	public static <T> void formatTableColumnDate(TableColumn<T, Date> tableColumn, String format) {
